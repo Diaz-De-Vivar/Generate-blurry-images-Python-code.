@@ -28,7 +28,7 @@ def posterize(im, levels=3):
 
 
 # opencv tutorial
-def proceed_2_distort(filename, sensible=25, save=None, display=True):
+def proceed_2_distort(filename, sensible=25, save=None, display=None):
 
 
     img = cv2.imread(filename)

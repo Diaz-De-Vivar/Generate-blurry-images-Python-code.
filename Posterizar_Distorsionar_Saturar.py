@@ -1,85 +1,91 @@
 import cv2
+'version opencv-python =  4.2.0.32'
 import numpy as np
-import glob
+'numpy.version.version = 1.18.2  (en Python console)'
 import os
+import glob
 
-PATH = 'directory path'
-NOISE_FOLDER = 'output folder'
-dataset_path = os.path.join(PATH, 'dataset folder')
-IMAGES = glob.glob(dataset_path + os.sep + '*.jpg')
-#IMAGES = os.listdir(dataset_path)
 
-def posterize(im, levels=3):
-    n = levels  # Number of levels of quantization
 
+path = r'Path of the original images'
+# Busqueda de archivos por extension (.jpg o .png)
+imagenes = glob.glob(path + os.sep + '*.png')+glob.glob(path + os.sep + '*.jpg') # Lista de todos los archivos con extension .jpg o .png en la carpeta (imagenes) (ruta entera)
+destination = r'Path of the edited images'
+
+def blur(input_image):
+    grade=15
+    blur = cv2.blur(input_image, (grade, grade))
+
+    return blur
+
+def posterize(input_image):
+    n = 3  # Number of levels of quantization
 
     indices = np.arange(0, 256)  # List of all colors
+
     divider = np.linspace(0, 255, n + 1)[1]  # we get a divider
+
     quantiz = np.int0(np.linspace(0, 255, n))  # we get quantization colors
 
     color_levels = np.clip(np.int0(indices / divider), 0, n - 1)  # color levels 0,1,2..
 
     palette = quantiz[color_levels]  # Creating the palette
 
-    im2 = palette[im]  # Applying palette on image
+    im2 = palette[input_image]  # Applying palette on image
+
     im2 = cv2.convertScaleAbs(im2)  # Converting image back to uint8
 
     return im2
 
 
-# opencv tutorial
-def proceed_2_distort(filename, sensible=25, save=None, display=None):
+def gaussian_blur(input_image):
+    ksize=15
+    ksize_width = ksize
+    ksize_height = ksize
+    # Both must be positive and odd (impar).
+
+    gausBlur = cv2.GaussianBlur(input_image, (ksize, ksize), sigmaX=0)
+
+    return gausBlur
 
 
-    img = cv2.imread(filename)
-    if display:
-        cv2.imshow('Image', img)
-    # if not working correctly change to cv2.COLOR_BGR2HSV
-    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+def saturate(input_image):
+    # Define mask's boundaries
+    color1 = (40, 60, 80)  # Verde caqui
+    color2 = (120, 255, 255)  # Verde
 
-    # by changing this value, you decide the range
-    # to pick different green colors..
-    sensitivity = sensible
-    lower = np.array([60 - sensitivity, 100, 50])
-    upper = np.array([60 + sensitivity, 255, 255])
+    hsv = cv2.cvtColor(input_image, cv2.COLOR_RGB2HSV)
+
+    lower = np.array([color1[0], color1[1], color1[2]])
+    upper = np.array([color2[0], color2[1], color2[2]])
 
     mask = cv2.inRange(hsv, lower, upper)
 
-    background = np.full(img.shape, 255, dtype=np.uint8)
-    green2black = cv2.bitwise_not(background, img, mask=mask)
+    background = np.full(input_image.shape, 255, dtype=np.uint8)
+    green2black = cv2.bitwise_not(background, input_image, mask=mask)
 
-    blurImg = cv2.blur(green2black, (30, 30))
-    blurry_poste = posterize(blurImg, 8)
-    gausBlur = cv2.GaussianBlur(blurry_poste, (7, 7), 0)
-    # cv2.imshow('Posterization1 + Gaussian', gausBlur)
-    gausBlur_post = posterize(gausBlur, 4)
-    final_result = cv2.GaussianBlur(gausBlur_post, (7, 7), 0)
-    # cv2.imshow('Posterization2 + Gaussian', final_result)
+    return green2black
 
-    if display:
-        cv2.imshow('Result', final_result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
-    if save:
-        out_dir = os.path.join(PATH, NOISE_FOLDER)
+def save(b=None, p=None, gb=None, s=None):
+    for i, img in enumerate(imagenes):
+        # print (img) Rutas de todas las imagenes
+        # print(img.rsplit(os.sep, 1)[1]) Nombre de todas las imagenes
+        filename = img.rsplit(os.sep, 1)[1]
+        edit = cv2.imread(img)
+        # print(os.path.join(destination, filename)) Rutas de todas las imagenes en el destino
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    filename = filename.rsplit(os.sep, 1)[1]
-
-    cv2.imwrite(os.path.join(out_dir, filename), final_result)
+        'ACTIONS'
+        if b:
+            edit = blur(edit)
+        if p:
+            edit = posterize(edit)
+        if gb:
+            edit = gaussian_blur(edit)
+        if s:
+            edit = saturate(edit)
+        cv2.imwrite(os.path.join(destination, filename), edit)
+        print(i+1,'de',np.size(imagenes))
 
 if __name__ == '__main__':
-    idx = 5
-    for i, img in enumerate(IMAGES):
-        proceed_2_distort(img, save=True)
-
-        if i % 1000 == 0:
-            print(f"Already {i} images(s).")
-
-'References:'
-'https://stackoverflow.com/questions/11064454/adobe-photoshop-style-posterization-and-opencv '
-'https://stackoverflow.com/questions/52107379/intensify-or-increase-saturation-of-an-image'
-'https://medium.com/@gastonace1/detecci%C3%B3n-de-objetos-por-colores-en-im%C3%A1genes-con-python-y-opencv-c8d9b6768ff'
-'https://justpaste.it/distorsionar_imagenes'
+    save(b=True, p=True, gb=True, s=True)

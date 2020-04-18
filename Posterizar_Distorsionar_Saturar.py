@@ -51,8 +51,8 @@ def gaussian_blur(input_image):
 
 def saturate(input_image):
     # Define mask's boundaries
-    color1 = (40, 60, 80)  # Verde caqui
-    color2 = (120, 255, 255)  # Verde
+    color1 = (0, 0, 141)
+    color2 = (179, 174, 255)  # Verde
 
     hsv = cv2.cvtColor(input_image, cv2.COLOR_RGB2HSV)
 
